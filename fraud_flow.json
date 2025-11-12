@@ -1,0 +1,248 @@
+{
+    "name": "My workflow",
+    "nodes": [
+        {
+            "parameters": {
+                "formTitle": "FRAUD DETECTION SYSTEM",
+                "formDescription": "ENTER THE DETAILS GIVEN BELLOW",
+                "formFields": {
+                    "values": [
+                        {
+                            "fieldLabel": "ENTER TRANSACTION ID:",
+                            "placeholder": "ENTER ID",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "ENTER THE ACCOUNT NUMBER:",
+                            "fieldType": "number",
+                            "placeholder": "ACCOUNT NAME",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "ENTER USER ID:",
+                            "placeholder": "USER ID",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "ENTER THE EMAIL ID:",
+                            "fieldType": "email",
+                            "placeholder": "EMAIL ID:",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "ENTER YOUR PHONE NUMBER:",
+                            "fieldType": "number",
+                            "placeholder": "PHONE NUMBER",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "ENTER THE AMOUNT RECIVED:",
+                            "fieldType": "number",
+                            "placeholder": "AMOUNT",
+                            "requiredField": true
+                        },
+                        {
+                            "fieldLabel": "BEFORE RECIVED FRAUD TRANSACTION",
+                            "fieldType": "checkbox",
+                            "fieldOptions": {
+                                "values": [
+                                    {
+                                        "option": "YES"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "fieldLabel": "PLATFORM OF TRANSACTION:",
+                            "placeholder": "G.PAY/PHONE PAY ETC",
+                            "requiredField": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.formTrigger",
+            "typeVersion": 2.3,
+            "position": [
+                0,
+                0
+            ],
+            "id": "1daf35ad-2b70-4a6b-b042-e39b0e4e26ae",
+            "name": "On form submission",
+            "webhookId": "61b6ede7-f2fb-4aec-9c26-2c83b068517d"
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "You are an AI Fraud Detection Agent. \nYour task is to analyze each financial transaction and determine if it looks fraudulent or safe.\n\nTransaction details:\n- Transaction ID: {{ $json[\"trans_id\"] }}\n- Account Number: {{ $json[\"account_number\"] }}\n- User ID: {{ $json[\"user_id\"] }}\n- Email ID: {{ $json[\"email_id\"] }}\n- Phone Number: {{ $json[\"phone_number\"] }}\n- Amount Received: {{ $json[\"amount_received\"] }}\n\nAnalyze the details carefully using the following logic:\n\n1. Check for unusual transaction patterns (very high or very low amounts).\n2. Look for repeated or mismatched user IDs, emails, or phone numbers.\n3. Detect suspicious account numbers or incomplete data.\n4. Identify unusual or duplicate transaction IDs.\n5. Flag transactions where the email or phone number appear fake or invalid.\n\nBased on your analysis, return a short and clear output in this exact JSON format:\n\n{\n  \"fraud_score\": \"<number between 0 and 1>\",\n  \"risk_level\": \"<Low / Medium / High>\",\n  \"recommendation\": \"<Allow / Review / Block>\",\n  \"reason\": \"<one line reason for your decision>\"\n}\n\nKeep your response short, structured, and machine-readable.\n",
+                "hasOutputParser": true,
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 3,
+            "position": [
+                208,
+                0
+            ],
+            "id": "cee55969-08ec-42d3-a7af-cd2de5613c7b",
+            "name": "fraud detection ai"
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+            "typeVersion": 1,
+            "position": [
+                208,
+                224
+            ],
+            "id": "3f584153-e21f-46dd-ae57-2df24a51ac4d",
+            "name": "Google Gemini Chat Model",
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "xbfWpXl0E6YFgFV7",
+                    "name": "Google Gemini(PaLM) Api account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "loose",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "64247d3d-b5d0-45d8-a465-305a563882d1",
+                            "leftValue": "{{ $json.output }}",
+                            "rightValue": "{{ $json.output }}",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals",
+                                "name": "filter.operator.equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "looseTypeValidation": "={{ true }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                560,
+                0
+            ],
+            "id": "f3b2bcb0-360b-4b33-ae92-4e0959c18be5",
+            "name": "Check fraud risk"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "b0d17506-ee05-448f-b326-64a51a6d059a",
+                            "name": "output",
+                            "value": "={{ $json.output }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                768,
+                0
+            ],
+            "id": "3afd4eb3-8ecd-4d01-ba2e-97b578c54724",
+            "name": "Edit Fields"
+        },
+        {
+            "parameters": {
+                "authentication": "serviceAccount",
+                "emailType": "text",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                752,
+                304
+            ],
+            "id": "2af51eaf-fcee-461f-bee9-e51f69e192d5",
+            "name": "Send a message",
+            "webhookId": "b99cd293-d84c-459e-a118-61d5d0c5e6bf"
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "On form submission": {
+            "main": [
+                [
+                    {
+                        "node": "fraud detection ai",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Gemini Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "fraud detection ai",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "fraud detection ai": {
+            "main": [
+                [
+                    {
+                        "node": "Check fraud risk",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check fraud risk": {
+            "main": [
+                [
+                    {
+                        "node": "Edit Fields",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "Edit Fields": {
+            "main": [
+                []
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "e954a01c-a5cf-4fcd-a32c-3cc7cb0f5cad",
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "f4b8f4c347f0553ad9e2fd24b69a048d96523752e56ef5395a770ef92720c9f7"
+    },
+    "id": "kzA6eTjaL7Z2DKfq",
+    "tags": []
+}
